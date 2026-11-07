@@ -1,0 +1,23 @@
+// The Prisma schema describes our database tables.
+// Prisma reads this file to create migrations (SQL) and to generate
+// a type-safe client we use in our code.
+
+// Generate the Prisma Client into the "generated/prisma" folder.
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+// We use MySQL. The connection URL lives in prisma.config.ts (read from .env).
+datasource db {
+  provider = "mysql"
+}
+
+// One table: Task.
+model Task {
+  id        Int      @id @default(autoincrement()) // 1, 2, 3, ... set by the database
+  title     String   @db.VarChar(100) // max 100 characters, same limit as our validation
+  completed Boolean  @default(false) // new tasks start as not completed
+  createdAt DateTime @default(now()) // set once when the task is created
+  updatedAt DateTime @updatedAt // Prisma updates this every time the task changes
+}
