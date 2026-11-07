@@ -7,8 +7,9 @@ import TaskList from "./task-list";
 
 export default function Home() {
   return (
-    <main>
-      <h1>Task Manager</h1>
+    // A centred column, max ~512px wide, with padding so it fits on phones.
+    <main className="mx-auto w-full max-w-lg p-4">
+      <h1 className="mb-4 text-2xl font-bold">Task Manager</h1>
 
       {/*
         Why Suspense? With Cache Components turned on, Next.js builds a static
@@ -16,7 +17,7 @@ export default function Home() {
         request, so they can't be part of that shell. Suspense marks this part
         as "load at request time" and shows the fallback until it's ready.
       */}
-      <Suspense fallback={<p>Loading tasks...</p>}>
+      <Suspense fallback={<p className="text-gray-500">Loading tasks...</p>}>
         <Tasks />
       </Suspense>
     </main>
