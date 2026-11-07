@@ -24,20 +24,29 @@ export default async function TasksView({
   });
 
   return (
-    // A centred column, max ~512px wide, with padding so it fits on phones.
-    <main className="mx-auto w-full max-w-lg p-4">
-      <h1 className="mb-4 text-2xl font-bold">Task Manager</h1>
+    // Outer: a softly tinted background that fills the screen.
+    <main className="flex-1 bg-gray-500/5 px-4 py-8">
+      {/* Inner: a centred card, max ~512px wide. "bg-background" is the
+          page colour from globals.css (white, or near-black in dark mode). */}
+      <div className="mx-auto max-w-lg rounded-2xl border border-gray-500/20 bg-background p-5 shadow-sm">
+        <header className="mb-5 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold">Task Manager</h1>
+            <p className="truncate text-sm text-gray-500">Signed in as {name}</p>
+          </div>
+          {/* "shrink-0" keeps the button from squashing on narrow phones. */}
+          <form action={handleSignOut} className="shrink-0">
+            <button
+              type="submit"
+              className="rounded-lg border border-gray-500/30 px-3 py-1.5 text-sm hover:bg-gray-500/10"
+            >
+              Sign out
+            </button>
+          </form>
+        </header>
 
-      <div className="mb-4 flex items-center justify-between gap-2 text-sm">
-        <p className="min-w-0 truncate text-gray-500">Signed in as {name}</p>
-        <form action={handleSignOut}>
-          <button type="submit" className="rounded px-3 py-1 hover:bg-gray-500/20">
-            Sign out
-          </button>
-        </form>
+        <TaskList tasks={tasks} />
       </div>
-
-      <TaskList tasks={tasks} />
     </main>
   );
 }

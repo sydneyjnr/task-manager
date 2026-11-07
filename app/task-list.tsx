@@ -34,7 +34,7 @@ export default function TaskList({ tasks }: { tasks: Task[] }) {
       <AddTaskForm />
 
       {/* "flex-wrap" lets the buttons and the count wrap on small screens. */}
-      <div className="my-4 flex flex-wrap items-center justify-between gap-2">
+      <div className="my-5 flex flex-wrap items-center justify-between gap-2">
         <FilterButtons filter={filter} setFilter={setFilter} />
         <p className="text-sm text-gray-500">
           {remaining} {remaining === 1 ? "task" : "tasks"} left
@@ -43,7 +43,8 @@ export default function TaskList({ tasks }: { tasks: Task[] }) {
 
       <EmptyMessage total={tasks.length} visible={visibleTasks.length} />
 
-      <ul>
+      {/* "divide-y" draws a thin line between the rows. */}
+      <ul className="divide-y divide-gray-500/20">
         {visibleTasks.map((task) => (
           <TaskItem key={task.id} task={task} />
         ))}
@@ -55,11 +56,11 @@ export default function TaskList({ tasks }: { tasks: Task[] }) {
 // Shown when there is nothing in the list.
 function EmptyMessage({ total, visible }: { total: number; visible: number }) {
   if (total === 0) {
-    return <p className="py-8 text-center text-gray-500">No tasks yet.</p>;
+    return <p className="py-10 text-center text-sm text-gray-500">No tasks yet.</p>;
   }
   if (visible === 0) {
     // There are tasks, but none match the selected filter.
-    return <p className="py-8 text-center text-gray-500">No tasks here.</p>;
+    return <p className="py-10 text-center text-sm text-gray-500">No tasks here.</p>;
   }
   return null; // Nothing to show: the list has tasks.
 }
@@ -73,7 +74,8 @@ function FilterButtons({
   setFilter: (value: string) => void;
 }) {
   return (
-    <div className="flex gap-1">
+    // A grey "pill" track that holds the three buttons.
+    <div className="flex gap-1 rounded-full bg-gray-500/10 p-1">
       <FilterButton value="all" label="All" filter={filter} setFilter={setFilter} />
       <FilterButton value="active" label="Active" filter={filter} setFilter={setFilter} />
       <FilterButton value="completed" label="Completed" filter={filter} setFilter={setFilter} />
@@ -81,7 +83,7 @@ function FilterButtons({
   );
 }
 
-// One filter button. The selected one is blue.
+// One pill-shaped filter button. The selected one is blue.
 function FilterButton({
   value,
   label,
@@ -103,8 +105,8 @@ function FilterButton({
       aria-pressed={isSelected}
       className={
         isSelected
-          ? "rounded bg-blue-600 px-3 py-1 text-sm text-white"
-          : "rounded px-3 py-1 text-sm hover:bg-gray-500/20"
+          ? "rounded-full bg-blue-600 px-3 py-1 text-sm text-white"
+          : "rounded-full px-3 py-1 text-sm text-gray-500 hover:text-foreground"
       }
     >
       {label}
@@ -135,9 +137,12 @@ function AddTaskForm() {
           maxLength={100}
           aria-label="New task title"
           // "min-w-0" lets the input shrink on narrow phone screens.
-          className="min-w-0 flex-1 rounded border border-gray-300 px-3 py-2"
+          className="min-w-0 flex-1 rounded-lg border border-gray-500/30 px-3 py-2"
         />
-        <button type="submit" className="rounded bg-blue-600 px-4 py-2 text-white">
+        <button
+          type="submit"
+          className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+        >
           Add
         </button>
       </div>
@@ -154,21 +159,23 @@ function TaskItem({ task }: { task: Task }) {
 
   if (isEditing) {
     return (
-      <li className="border-b border-gray-300 py-2">
+      <li className="py-2">
         <EditTaskForm task={task} onDone={() => setIsEditing(false)} />
       </li>
     );
   }
 
   return (
-    <li className="flex items-center gap-2 border-b border-gray-300 py-2">
+    // "hover:bg-gray-500/5" gives the row a faint background on hover.
+    <li className="flex items-center gap-1 px-2 py-3 hover:bg-gray-500/5">
       {/* Wrapping the checkbox in a label lets you click the title too. */}
       <label className="flex min-w-0 flex-1 items-center gap-3">
+        {/* "accent-blue-600" colours the tick box with our blue. */}
         <input
           type="checkbox"
           checked={task.completed}
           onChange={() => toggleTask(task.id)}
-          className="size-5 shrink-0"
+          className="size-5 shrink-0 accent-blue-600"
         />
         {/* "min-w-0 break-words" lets long titles wrap instead of
             overflowing on phones. Completed tasks are crossed out and greyed. */}
@@ -186,14 +193,14 @@ function TaskItem({ task }: { task: Task }) {
       <button
         type="button"
         onClick={() => setIsEditing(true)}
-        className="px-2 py-1 text-sm text-blue-600"
+        className="rounded-md px-2 py-1 text-sm text-gray-500 hover:bg-gray-500/10"
       >
         Edit
       </button>
       <button
         type="button"
         onClick={() => deleteTask(task.id)}
-        className="px-2 py-1 text-sm text-red-600"
+        className="rounded-md px-2 py-1 text-sm text-red-600 hover:bg-red-500/10"
       >
         Delete
       </button>
@@ -226,12 +233,19 @@ function EditTaskForm({ task, onDone }: { task: Task; onDone: () => void }) {
           required
           maxLength={100}
           aria-label="Task title"
-          className="min-w-0 flex-1 rounded border border-gray-300 px-2 py-1"
+          className="min-w-0 flex-1 rounded-lg border border-gray-500/30 px-2 py-1"
         />
-        <button type="submit" className="rounded bg-blue-600 px-3 py-1 text-sm text-white">
+        <button
+          type="submit"
+          className="rounded-lg bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
+        >
           Save
         </button>
-        <button type="button" onClick={onDone} className="px-2 py-1 text-sm">
+        <button
+          type="button"
+          onClick={onDone}
+          className="rounded-md px-2 py-1 text-sm text-gray-500 hover:bg-gray-500/10"
+        >
           Cancel
         </button>
       </div>
