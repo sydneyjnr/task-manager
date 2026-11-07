@@ -6,23 +6,55 @@
 import { refresh } from "next/cache";
 import { prisma } from "@/lib/prisma";
 
-// Create a new task from the "add task" form.
-// Returns an error message, or null if everything went well.
-export async function createTask(formData: FormData) {
-  // Read the "title" input and remove spaces at the start and end.
-  const title = String(formData.get("title") || "").trim();
-
- 
+// Checks a title. Returns an error message, or null if the title is OK.
+// Used by both createTask and updateTask so the rules are in one place.
+// (It isn't exported, so it is a normal helper, not a Server Action.)
+function validateTitle(title: string) {
   if (title === "") {
     return "Title is required.";
   }
   if (title.length > 100) {
     return "Title must be 100 characters or less.";
   }
+  return null;
+}
+
+// Create a new task from the "add task" form.
+// Returns an error message, or null if everything went well.
+export async function createTask(formData: FormData) {
+  // Read the "title" input and remove spaces at the start and end.
+  const title = String(formData.get("title") || "").trim();
+
+  const error = validateTitle(title);
+  if (error) {
+    return error;
+  }
 
   await prisma.task.create({ data: { title } });
 
   // Tell Next.js to re-render the page so the new task shows up.
+  refresh();
+  return null;
+}
+
+// Change a task's title, from the "edit" form.
+// Returns an error message, or null if everything went well.
+export async function updateTask(formData: FormData) {
+  // Form values are always text, so turn the id into a number.
+  const id = Number(formData.get("id"));
+  const title = String(formData.get("title") || "").trim();
+
+  if (!Number.isInteger(id)) {
+    return "Invalid task.";
+  }
+  const error = validateTitle(title);
+  if (error) {
+    return error;
+  }
+
+  // updateMany (like deleteMany below) doesn't throw an error
+  // if the task was deleted in the meantime.
+  await prisma.task.updateMany({ where: { id }, data: { title } });
   refresh();
   return null;
 }

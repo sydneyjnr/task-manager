@@ -3,7 +3,7 @@
 "use client";
 
 import { useState } from "react";
-import { createTask, deleteTask, toggleTask } from "./actions";
+import { createTask, deleteTask, toggleTask, updateTask } from "./actions";
 
 // The shape of a task, as sent from page.tsx.
 type Task = {
@@ -57,6 +57,17 @@ function AddTaskForm() {
 
 // One row in the list: a checkbox, the title and a delete button.
 function TaskItem({ task }: { task: Task }) {
+  // true while this row shows the edit form instead of the title.
+  const [isEditing, setIsEditing] = useState(false);
+
+  if (isEditing) {
+    return (
+      <li>
+        <EditTaskForm task={task} onDone={() => setIsEditing(false)} />
+      </li>
+    );
+  }
+
   return (
     <li>
       {/* Wrapping the checkbox in a label lets you click the title too. */}
@@ -72,9 +83,47 @@ function TaskItem({ task }: { task: Task }) {
         </span>
       </label>
 
+      <button type="button" onClick={() => setIsEditing(true)}>
+        Edit
+      </button>
       <button type="button" onClick={() => deleteTask(task.id)}>
         Delete
       </button>
     </li>
+  );
+}
+
+// The form shown in a row while editing its title.
+// "onDone" is a function from TaskItem that closes the form.
+function EditTaskForm({ task, onDone }: { task: Task; onDone: () => void }) {
+  const [error, setError] = useState("");
+
+  async function handleSubmit(formData: FormData) {
+    const result = await updateTask(formData);
+    if (result) {
+      setError(result); // Keep the form open and show the problem.
+    } else {
+      onDone(); // Saved, so go back to showing the title.
+    }
+  }
+
+  return (
+    <form action={handleSubmit}>
+      {/* A hidden input sends the task's id along with the new title. */}
+      <input type="hidden" name="id" value={task.id} />
+      <input
+        name="title"
+        defaultValue={task.title}
+        required
+        maxLength={100}
+        aria-label="Task title"
+      />
+      <button type="submit">Save</button>
+      <button type="button" onClick={onDone}>
+        Cancel
+      </button>
+
+      {error && <p>{error}</p>}
+    </form>
   );
 }
