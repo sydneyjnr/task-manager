@@ -13,11 +13,71 @@ datasource db {
   provider = "mysql"
 }
 
-// One table: Task.
+// A task. Every task belongs to one user.
 model Task {
   id        Int      @id @default(autoincrement()) // 1, 2, 3, ... set by the database
   title     String   @db.VarChar(100) // max 100 characters, same limit as our validation
   completed Boolean  @default(false) // new tasks start as not completed
   createdAt DateTime @default(now()) // set once when the task is created
   updatedAt DateTime @updatedAt // Prisma updates this every time the task changes
+
+  // Foreign key: the id of the user who owns this task.
+  userId String
+  // "onDelete: Cascade" means deleting a user also deletes their tasks.
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------
+// The models below are the ones Auth.js needs (from the Auth.js Prisma
+// adapter docs). Auth.js reads and writes them itself when people sign in.
+// ---------------------------------------------------------------------
+
+// A person who has signed in. Auth.js fills in name, email and image from Google.
+// Auth.js uses text ids (cuid), so this id is a String, not an Int.
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  tasks    Task[] // all the tasks this user owns
+}
+
+// Links a User to their Google account (one row per sign-in provider).
+model Account {
+  userId            String
+  type              String
+  provider          String // "google"
+  providerAccountId String // the user's id at Google
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // A Google account can only be linked once.
+  @@id([provider, providerAccountId])
+}
+
+// A signed-in browser. The sessionToken is stored in a cookie;
+// Auth.js looks it up here to find out who is signed in.
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

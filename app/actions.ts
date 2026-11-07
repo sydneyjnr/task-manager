@@ -5,6 +5,7 @@
 
 import { refresh } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 
 // Checks a title. Returns an error message, or null if the title is OK.
 // Used by both createTask and updateTask so the rules are in one place.
@@ -22,6 +23,14 @@ function validateTitle(title: string) {
 // Create a new task from the "add task" form.
 // Returns an error message, or null if everything went well.
 export async function createTask(formData: FormData) {
+  // Find out who is signed in. The user id comes from the session
+  // cookie on the server, never from the browser.
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) {
+    return "You must be signed in.";
+  }
+
   // Read the "title" input and remove spaces at the start and end.
   const title = String(formData.get("title") || "").trim();
 
@@ -30,7 +39,8 @@ export async function createTask(formData: FormData) {
     return error;
   }
 
-  await prisma.task.create({ data: { title } });
+  // Save the task as belonging to this user.
+  await prisma.task.create({ data: { title, userId } });
 
   // Tell Next.js to re-render the page so the new task shows up.
   refresh();
