@@ -7,9 +7,18 @@ import { refresh } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 
+// Returns the id of the signed-in user, or undefined if nobody is signed in.
+// The id comes from the session cookie, checked on the server by Auth.js.
+// We never take a user id from the browser, because it could be faked.
+// (Not exported, so it's a normal helper, not a Server Action.)
+async function getUserId() {
+  const session = await auth();
+  return session?.user?.id;
+}
+
 // Checks a title. Returns an error message, or null if the title is OK.
 // Used by both createTask and updateTask so the rules are in one place.
-// (It isn't exported, so it is a normal helper, not a Server Action.)
+// (Not exported, so it's a normal helper, not a Server Action.)
 function validateTitle(title: string) {
   if (title === "") {
     return "Title is required.";
@@ -23,10 +32,7 @@ function validateTitle(title: string) {
 // Create a new task from the "add task" form.
 // Returns an error message, or null if everything went well.
 export async function createTask(formData: FormData) {
-  // Find out who is signed in. The user id comes from the session
-  // cookie on the server, never from the browser.
-  const session = await auth();
-  const userId = session?.user?.id;
+  const userId = await getUserId();
   if (!userId) {
     return "You must be signed in.";
   }
@@ -50,6 +56,11 @@ export async function createTask(formData: FormData) {
 // Change a task's title, from the "edit" form.
 // Returns an error message, or null if everything went well.
 export async function updateTask(formData: FormData) {
+  const userId = await getUserId();
+  if (!userId) {
+    return "You must be signed in.";
+  }
+
   // Form values are always text, so turn the id into a number.
   const id = Number(formData.get("id"));
   const title = String(formData.get("title") || "").trim();
@@ -62,24 +73,31 @@ export async function updateTask(formData: FormData) {
     return error;
   }
 
+  // "where: { id, userId }" only matches the task if it belongs to this
+  // user, so nobody can change someone else's task by sending its id.
   // updateMany (like deleteMany below) doesn't throw an error
-  // if the task was deleted in the meantime.
-  await prisma.task.updateMany({ where: { id }, data: { title } });
+  // if no task matches.
+  await prisma.task.updateMany({ where: { id, userId }, data: { title } });
   refresh();
   return null;
 }
 
 // Flip a task between completed and not completed.
 export async function toggleTask(id: number) {
+  const userId = await getUserId();
+  if (!userId) {
+    return;
+  }
+
   // The id comes from the browser, so check it's a whole number.
   if (!Number.isInteger(id)) {
     return;
   }
 
-  // Find the task so we know its current value.
-  const task = await prisma.task.findUnique({ where: { id } });
+  // Find the task, but only if it belongs to this user.
+  const task = await prisma.task.findFirst({ where: { id, userId } });
   if (!task) {
-    return; // The task doesn't exist (maybe it was deleted in another tab).
+    return; // Not found, or it's someone else's task.
   }
 
   await prisma.task.update({
@@ -91,12 +109,17 @@ export async function toggleTask(id: number) {
 
 // Delete a task.
 export async function deleteTask(id: number) {
+  const userId = await getUserId();
+  if (!userId) {
+    return;
+  }
+
   if (!Number.isInteger(id)) {
     return;
   }
 
-  // We use deleteMany instead of delete because it doesn't throw an error
-  // if the task is already gone (for example, deleted in another tab).
-  await prisma.task.deleteMany({ where: { id } });
+  // Only deletes the task if it belongs to this user.
+  // deleteMany doesn't throw an error if no task matches.
+  await prisma.task.deleteMany({ where: { id, userId } });
   refresh();
 }
