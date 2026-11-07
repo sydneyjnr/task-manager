@@ -12,17 +12,73 @@ type Task = {
   completed: boolean;
 };
 
-// The main component: the add form and the list of tasks.
+// The main component: the add form, the filter and the list of tasks.
 export default function TaskList({ tasks }: { tasks: Task[] }) {
+  // Which tasks to show: "all", "active" or "completed".
+  // This only changes what we show, so it lives in the browser (no database call).
+  const [filter, setFilter] = useState("all");
+
+  // Pick the tasks that match the current filter.
+  let visibleTasks = tasks;
+  if (filter === "active") {
+    visibleTasks = tasks.filter((task) => !task.completed);
+  } else if (filter === "completed") {
+    visibleTasks = tasks.filter((task) => task.completed);
+  }
+
+  // Count the tasks that are not completed yet (always from ALL tasks).
+  const remaining = tasks.filter((task) => !task.completed).length;
+
   return (
     <div>
       <AddTaskForm />
 
+      <FilterButtons filter={filter} setFilter={setFilter} />
+
+      <p>
+        {remaining} {remaining === 1 ? "task" : "tasks"} left
+      </p>
+
       <ul>
-        {tasks.map((task) => (
+        {visibleTasks.map((task) => (
           <TaskItem key={task.id} task={task} />
         ))}
       </ul>
+    </div>
+  );
+}
+
+// The three filter buttons. The selected one is shown in bold.
+function FilterButtons({
+  filter,
+  setFilter,
+}: {
+  filter: string;
+  setFilter: (value: string) => void;
+}) {
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setFilter("all")}
+        className={filter === "all" ? "font-bold" : ""}
+      >
+        All
+      </button>
+      <button
+        type="button"
+        onClick={() => setFilter("active")}
+        className={filter === "active" ? "font-bold" : ""}
+      >
+        Active
+      </button>
+      <button
+        type="button"
+        onClick={() => setFilter("completed")}
+        className={filter === "completed" ? "font-bold" : ""}
+      >
+        Completed
+      </button>
     </div>
   );
 }
