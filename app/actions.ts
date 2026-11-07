@@ -12,8 +12,7 @@ export async function createTask(formData: FormData) {
   // Read the "title" input and remove spaces at the start and end.
   const title = String(formData.get("title") || "").trim();
 
-  // Validate on the server. The browser also checks this, but anyone can
-  // send a request directly to a Server Action, so we can't trust the browser.
+ 
   if (title === "") {
     return "Title is required.";
   }
@@ -26,4 +25,36 @@ export async function createTask(formData: FormData) {
   // Tell Next.js to re-render the page so the new task shows up.
   refresh();
   return null;
+}
+
+// Flip a task between completed and not completed.
+export async function toggleTask(id: number) {
+  // The id comes from the browser, so check it's a whole number.
+  if (!Number.isInteger(id)) {
+    return;
+  }
+
+  // Find the task so we know its current value.
+  const task = await prisma.task.findUnique({ where: { id } });
+  if (!task) {
+    return; // The task doesn't exist (maybe it was deleted in another tab).
+  }
+
+  await prisma.task.update({
+    where: { id },
+    data: { completed: !task.completed },
+  });
+  refresh();
+}
+
+// Delete a task.
+export async function deleteTask(id: number) {
+  if (!Number.isInteger(id)) {
+    return;
+  }
+
+  // We use deleteMany instead of delete because it doesn't throw an error
+  // if the task is already gone (for example, deleted in another tab).
+  await prisma.task.deleteMany({ where: { id } });
+  refresh();
 }

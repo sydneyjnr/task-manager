@@ -3,7 +3,7 @@
 "use client";
 
 import { useState } from "react";
-import { createTask } from "./actions";
+import { createTask, deleteTask, toggleTask } from "./actions";
 
 // The shape of a task, as sent from page.tsx.
 type Task = {
@@ -55,7 +55,26 @@ function AddTaskForm() {
   );
 }
 
-// One row in the list.
+// One row in the list: a checkbox, the title and a delete button.
 function TaskItem({ task }: { task: Task }) {
-  return <li>{task.title}</li>;
+  return (
+    <li>
+      {/* Wrapping the checkbox in a label lets you click the title too. */}
+      <label>
+        <input
+          type="checkbox"
+          checked={task.completed}
+          onChange={() => toggleTask(task.id)}
+        />
+        {/* Cross out the title when the task is completed. */}
+        <span className={task.completed ? "line-through" : ""}>
+          {task.title}
+        </span>
+      </label>
+
+      <button type="button" onClick={() => deleteTask(task.id)}>
+        Delete
+      </button>
+    </li>
+  );
 }
