@@ -64,10 +64,7 @@ export async function updateTask(formData: FormData) {
     return error;
   }
 
-  // "where: { id, userId }" only matches the task if it belongs to this
-  // user, so nobody can change someone else's task by sending its id.
-  // updateMany (like deleteMany below) doesn't throw an error
-  // if no task matches.
+
   await prisma.task.updateMany({ where: { id, userId }, data: { title } });
   refresh();
   return null;
