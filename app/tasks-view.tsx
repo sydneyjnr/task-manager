@@ -17,7 +17,7 @@ export default async function TasksView({
   // Only load this user's tasks.
   const tasks = await prisma.task.findMany({
     where: { userId },
-    // Only send the fields the page needs.
+    
     select: { id: true, title: true, completed: true },
     // Newest tasks first.
     orderBy: { createdAt: "desc" },
